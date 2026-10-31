@@ -22,6 +22,10 @@ const SUPABASE = {
 };
 const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 
+/** Uygulamanın kristal simgesi ve oyunun simgesi (assets/). */
+const CRYSTAL_ICON = './assets/kristal.png';
+const GAME_ICON = './assets/icon.jpg';
+
 const params = new URLSearchParams(location.search);
 const DEMO = params.get('demo') === '1';
 const $ = (id) => document.getElementById(id);
@@ -62,9 +66,8 @@ let reels, bg, burst, layout;
 
 // ─── kurulum ────────────────────────────────────────────────────────────────
 async function boot() {
-  const gemUrl = symbolURL('blue', 'glow');
-  $('ld-gem').innerHTML = `<img src="${gemUrl}" alt="">`;
-  document.querySelectorAll('.gem-ico').forEach((el) => { el.style.backgroundImage = `url(${symbolURL('blue', 'normal')})`; });
+  $('ld-gem').innerHTML = `<img src="${GAME_ICON}" alt="">`;
+  document.querySelectorAll('.gem-ico').forEach((el) => { el.style.backgroundImage = `url(${CRYSTAL_ICON})`; });
   $('brand').innerHTML = logoSVG(190);
 
   const intensity = detectIntensity(reduced);
@@ -127,9 +130,11 @@ async function connect() {
 }
 
 function setMode(mode) {
+  // Gerçek kristalde etiket gösterilmez; yalnız demo sayfası belirtilir.
   const chip = $('mode-chip');
   chip.className = `mode-chip ${mode}`;
-  chip.textContent = mode === 'live' ? 'GERÇEK KRİSTAL' : 'DEMO KREDİ';
+  chip.hidden = mode === 'live';
+  chip.textContent = mode === 'live' ? '' : 'DEMO KREDİ';
 }
 
 function applyState(st) {
@@ -224,7 +229,7 @@ function changeBet(dir) {
   updateButtons();
 }
 
-function renderBet() { $('bet-value').textContent = fmt(game.bet); }
+function renderBet() { $('bet-value').textContent = game.bet >= 100000 ? short(game.bet) : fmt(game.bet); }
 
 let balAnim = 0;
 function setBalance(v, animate = false) {
@@ -538,8 +543,7 @@ async function runBonus(r) {
   const rect = chest.getBoundingClientRect();
   burst.bigBurst(rect.left + rect.width / 2, rect.top + rect.height * 0.45, 0.8);
   $('bn-sub').textContent = 'Kristal Sandık ödülü';
-  const g = symbolURL('blue', 'normal');
-  $('bn-reward').innerHTML = `<div class="amt"><i class="gem-ico" style="background-image:url(${g})"></i><b id="bn-amt">0</b></div><div class="mult">BAHİS × ${r.bonus.reward.mult}</div>`;
+  $('bn-reward').innerHTML = `<div class="amt"><i class="gem-ico" style="background-image:url(${CRYSTAL_ICON})"></i><b id="bn-amt">0</b></div><div class="mult">BAHİS × ${r.bonus.reward.mult}</div>`;
   await countUp($('bn-amt'), r.bonus.reward.amount, T(1200), () => sound.tick());
   $('bn-collect').hidden = false;
   await new Promise((res) => {

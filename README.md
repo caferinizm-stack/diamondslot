@@ -8,8 +8,9 @@ veya ses dosyası yoktur.
 
 ## Kurulum
 
-1. **Sunucu:** `sql_kopyala.html` ▸ **FAZ 88: DIAMOND SLOT** bölümünü Supabase
-   SQL Editor'de bir kez çalıştır (`supabase_faz88_diamond_slot.sql`).
+1. **Sunucu:** `sql_kopyala.html` ▸ **FAZ 89: DIAMOND SLOT** bölümünü Supabase
+   SQL Editor'de bir kez çalıştır (`supabase_faz89_diamond_bahis.sql`; FAZ 88'in
+   güncel hali — en yüksek bahis 1.000.000).
 2. **Yayın:** bu klasörün içeriğini GitHub'da **`diamondslot`** adlı depoya
    yükle, Settings ▸ Pages ▸ Branch `main` / `(root)`. Adres:
    `https://caferinizm-stack.github.io/diamondslot/`
@@ -30,7 +31,7 @@ ekranda **DEMO KREDİ** yazar. Uygulama içinde demoya asla geçilmez.
 | Ödeme | soldan sağa 3/4/5 aynı sembol · `bahis × çarpan / 20` |
 | WILD | yalnız 2-3-4. makara · BONUS dışında her sembolün yerine geçer |
 | BONUS | 3+ (her yerde) → Kristal Sandık: bahis × 5…100 (4 BONUS ×2, 5 BONUS ×4) |
-| Bahisler | 100 · 250 · 500 · 1.000 · 2.500 · 5.000 · 10.000 · 25.000 · 50.000 |
+| Bahisler | 100 · 250 · 500 · 1.000 · 2.500 · 5.000 · 10.000 · 25.000 · 50.000 · 100.000 · 250.000 · 500.000 · 1.000.000 |
 | Tavan | tek çevirmede bahis × 5.000 |
 | RTP | ≈ %95 (1 milyon tur · `node tools/simulate.mjs 1000000`) |
 | Büyük kazanç | ≥ 15× **DIAMOND WIN!** · ≥ 50× **MEGA DIAMOND WIN!** |

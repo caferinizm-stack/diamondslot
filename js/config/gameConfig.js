@@ -80,7 +80,7 @@ export const MAX_WIN_X = 5000;
 
 /** Bahis (kristal) + demo kredi. */
 export const CREDITS = {
-  betLevels: [100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000],
+  betLevels: [100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000],
   defaultBet: 500,
   /** Yalnız `?demo=1`: tarayıcıdaki demo kredi başlangıcı / yenileme tutarı. */
   demoStart: 100000,

@@ -12,7 +12,9 @@ const lines = `array[${CONFIG.PAYLINES.map((l) => `array[${l.join(',')}]`).join(
 const rewards = CONFIG.BONUS_REWARDS.map((r) => ({ id: r.id, mult: r.mult, weight: r.weight }));
 
 const sql = `-- =====================================================================
--- FAZ 88: DIAMOND SLOT (5×3, 20 çizgi) · GERÇEK KRİSTAL · SUNUCU TARAFI
+-- FAZ 89: DIAMOND SLOT (5×3, 20 çizgi) · GERÇEK KRİSTAL · SUNUCU TARAFI
+-- (FAZ 88'in güncel hali: en yüksek bahis 1.000.000. FAZ 88 yerine de
+--  tek başına çalıştırılabilir.)
 -- ---------------------------------------------------------------------
 -- BU DOSYA ÜRETİLMİŞTİR: diamond_slot_web/tools/gen-sql.mjs
 -- (ödemeler, şeritler, çizgiler, bonus ve bahisler gameConfig.js ile aynı).
