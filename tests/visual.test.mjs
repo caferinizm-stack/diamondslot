@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import CONFIG from '../js/config/gameConfig.js';
 import { symbolSVG, SYMBOL_ART } from '../js/render/symbols.js';
-import { computeLayout, cabinetSVG, logoSVG } from '../js/render/cabinet.js';
+import { computeLayout, cabinetSVG, logoSVG, bulbSpots } from '../js/render/cabinet.js';
 
 const VARIANTS = ['normal', 'blur', 'win', 'glow'];
 
@@ -38,11 +38,24 @@ test('semboller: bulanık görünüm dikey hareket bulanıklığı içerir', () 
   for (const id of Object.keys(SYMBOL_ART)) assert.match(symbolSVG(id, 'blur'), /stdDeviation="0 10"/);
 });
 
-test('kasa + logo SVG üretilir', () => {
+test('kasa + logo SVG üretilir, ampuller ayrı katmanda', () => {
   const L = computeLayout(360, 400);
   const svg = cabinetSVG(L);
-  assert.match(svg, /class="bulb/);
-  assert.match(logoSVG(200), /DIAMOND/);
+  // Kasa SVG'si sabit kalmalı: içinde her karede yeniden boyanan animasyon olmaz.
+  assert.match(svg, /class="cabinet-svg"/);
+  assert.doesNotMatch(svg, /class="bulb/, 'ampuller SVG içine çizilmemeli (her karede yeniden boyama)');
+  assert.doesNotMatch(svg, /class="neon"[^>]*animation/);
+  // Ampuller DOM katmanı için koordinat olarak gelir.
+  const spots = bulbSpots(L);
+  assert.ok(spots.length >= 15, `ampul sayısı: ${spots.length}`);
+  for (const s of spots) {
+    assert.ok(s.x >= 0 && s.x <= L.W, `ampul yatayda kasa dışında: ${s.x}`);
+    assert.ok(s.y >= 0 && s.y <= L.H, `ampul dikeyde kasa dışında: ${s.y}`);
+    assert.ok(s.r > 0, 'ampul yarıçapı');
+  }
+  const logo = logoSVG(200);
+  assert.match(logo, /DIAMOND/);
+  assert.doesNotMatch(logo, /logo-shine/, 'logo parlaması SVG içine çizilmemeli');
 });
 
 test('mobil uyum: 5×3 pencere her ekran boyutunda sığar', () => {

@@ -423,6 +423,75 @@ export function symbolURL(id, variant = 'normal') {
   return url;
 }
 
+// ─── MAKARA SPRITE'LARI (bitmap) ────────────────────────────────────────────
+//
+// Dönüş sırasında bir hücrenin görseli saniyede ~25 kez değişir (5 makara ×
+// 5 hücre → saniyede yüzlerce değişim). SVG her değişimde yeniden çizilirse
+// (gradyanlar + feGaussianBlur / bloom filtreleri) telefonda kare düşürür.
+// Bu yüzden her sembol bir kez, hücrenin GERÇEK piksel boyutunda PNG'ye
+// pişirilir; makara yalnız hazır bitmap'i gösterir. Görünüm birebir aynıdır.
+
+let spritePx = 0;
+const spriteCache = new Map();   // `${id}:${variant}` → blob URL
+const FALLBACK_VARIANTS = ['win'];
+
+function bakeSprite(id, variant, px) {
+  const key = `${id}:${variant}`;
+  const hit = spriteCache.get(key);
+  if (hit) return Promise.resolve(hit);
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      try {
+        const cv = document.createElement('canvas');
+        cv.width = cv.height = px;
+        const c = cv.getContext('2d');
+        c.drawImage(img, 0, 0, px, px);
+        cv.toBlob((blob) => {
+          if (!blob) { resolve(null); return; }
+          const url = URL.createObjectURL(blob);
+          spriteCache.set(key, url);
+          resolve(url);
+        }, 'image/png');
+      } catch { resolve(null); }
+    };
+    const img = new Image();
+    img.onload = finish;
+    img.onerror = () => { settled = true; resolve(null); };
+    img.src = symbolURL(id, variant);
+  });
+}
+
+/**
+ * Makara sprite'larını pişirir. Hücre pixel boyutu değişirse önbellek yenilenir.
+ * @param {string[]} ids sembol kimlikleri
+ * @param {number} px hücrenin cihaz piksel boyutu
+ * @param {string[]} variants önce pişirilecek görünümler
+ */
+export async function prepareSprites(ids, px, variants = ['normal', 'blur']) {
+  const size = Math.max(24, Math.min(512, Math.round(px)));
+  if (spritePx !== size) {
+    const old = [...spriteCache.values()];
+    spriteCache.clear();
+    spritePx = size;
+    // Eski adresler hemen iptal edilirse ekrandaki hücreler boşalır; bekle.
+    setTimeout(() => old.forEach((url) => { try { URL.revokeObjectURL(url); } catch { /* yok */ } }), 9000);
+  }
+  const list = variants.filter((v) => !FALLBACK_VARIANTS.includes(v));
+  await Promise.all(ids.flatMap((id) => list.map((v) => bakeSprite(id, v, size))));
+  // Kalan görünümler (kazanma çerçevesi) boş zamanda pişirilir.
+  setTimeout(() => {
+    ids.forEach((id) => FALLBACK_VARIANTS.forEach((v) => bakeSprite(id, v, size)));
+  }, 1200);
+}
+
+/** Pişirilmiş sprite adresi (hazır değilse null → SVG'ye düşülür). */
+export function spriteURL(id, variant = 'normal') {
+  return spriteCache.get(`${id}:${variant}`) ?? null;
+}
+
 /** Görselleri önceden çözümler (ilk dönüşte takılma olmasın). */
 export async function preloadSymbols(ids, variants = ['normal', 'blur', 'win']) {
   const jobs = [];

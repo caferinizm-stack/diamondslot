@@ -51,7 +51,7 @@ export class BackgroundFX {
       i.src = symbolURL(id, 'normal');
       return sprite;
     });
-    this.frameGap = 1000 / 30;   // arka plan 30 kare/sn yeter
+    this.frameGap = 1000 / 24;   // yavaş atmosfer: 24 kare/sn yeter (telefon CPU'su)
     this.resize();
     window.addEventListener('resize', () => this.resize());
     document.addEventListener('visibilitychange', () => (document.hidden ? this.stop() : this.start()));
@@ -61,11 +61,60 @@ export class BackgroundFX {
     // Arka plan yumuşak bir atmosferdir: yarım çözünürlükte çizilir (performans).
     const { ctx, w, h } = fitCanvas(this.cv, 0.5);
     this.ctx = ctx; this.w = w; this.h = h;
+    this._bakeFog(w, h);
+    this._bakeBeams();
     this.parts = Array.from({ length: this.n }, () => this._p(true));
     this.gems = Array.from({ length: 4 }, (_, i) => ({
       img: this.imgs[i % 3], x: rnd(0, w), y: rnd(0, h), s: rnd(90, 190), a: rnd(0.05, 0.11),
       vx: rnd(-4, 4), vy: rnd(-3, 3), r: rnd(0, Math.PI * 2), vr: rnd(-0.05, 0.05),
     }));
+  }
+
+  /**
+   * Sis: üç radyal leke BİR KEZ düşük çözünürlüklü tuvale pişirilir. Kare
+   * başına 3 tam ekran gradyan yerine tek bir ölçekli blit yapılır.
+   */
+  _bakeFog(w, h) {
+    const k = 0.22;
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(64, Math.round(w * k));
+    cv.height = Math.max(64, Math.round(h * k));
+    const c = cv.getContext('2d');
+    const blobs = [
+      [0.5, 0.34, 'rgba(160,60,255,.30)'],
+      [0.24, 0.62, 'rgba(60,140,255,.22)'],
+      [0.76, 0.70, 'rgba(160,60,255,.24)'],
+    ];
+    const r = Math.max(cv.width, cv.height) * 0.66;
+    for (const [bx, by, color] of blobs) {
+      const x = cv.width * bx, y = cv.height * by;
+      const g = c.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, color);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g;
+      c.fillRect(0, 0, cv.width, cv.height);
+    }
+    this.fog = cv;
+  }
+
+  /** Işık huzmeleri de bir kez pişirilir (mavi + mor), kare başına tek blit. */
+  _bakeBeams() {
+    this.beams = ['160,110,255', '90,170,255'].map((c) => {
+      const cv = document.createElement('canvas');
+      cv.width = 64; cv.height = 256;
+      const x = cv.getContext('2d');
+      const g = x.createLinearGradient(0, 0, 0, 256);
+      g.addColorStop(0, `rgba(${c},.55)`);
+      g.addColorStop(1, `rgba(${c},0)`);
+      x.fillStyle = g;
+      x.beginPath(); x.moveTo(26, 0); x.lineTo(38, 0); x.lineTo(64, 256); x.lineTo(0, 256); x.closePath(); x.fill();
+      // yumuşak kenar
+      x.globalCompositeOperation = 'destination-in';
+      const m = x.createLinearGradient(0, 0, 64, 0);
+      m.addColorStop(0, 'rgba(0,0,0,0)'); m.addColorStop(0.5, 'rgba(0,0,0,1)'); m.addColorStop(1, 'rgba(0,0,0,0)');
+      x.fillStyle = m; x.fillRect(0, 0, 64, 256);
+      return cv;
+    });
   }
 
   _p(anywhere = false) {
@@ -94,44 +143,42 @@ export class BackgroundFX {
 
   stop() { this.running = false; }
 
+  /** Kare hızını ayarlar (dönüş sırasında arka plan yavaşlatılır). */
+  setFps(fps) {
+    const n = Number(fps) || 30;
+    this.frameGap = 1000 / Math.max(8, Math.min(60, n));
+  }
+
   draw(dt) {
     const { ctx, w, h } = this;
     this.t += dt * (this.reduced ? 0.3 : 1);
     const t = this.t;
     ctx.clearRect(0, 0, w, h);
 
-    // sisli mor zemin (canvas üstündeki CSS gradyanına ek, hareketli sis)
-    for (let i = 0; i < 3; i++) {
-      const x = w * (0.5 + 0.35 * Math.sin(t * 0.07 + i * 2.1));
-      const y = h * (0.45 + 0.3 * Math.cos(t * 0.05 + i * 1.7));
-      const g = ctx.createRadialGradient(x, y, 0, x, y, Math.max(w, h) * 0.55);
-      g.addColorStop(0, i === 1 ? 'rgba(60,140,255,0.10)' : 'rgba(160,60,255,0.13)');
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
+    // sis: pişirilmiş düşük çözünürlüklü katman, çok hafif sürüklenme
+    if (this.fog) {
+      const dx = Math.sin(t * 0.07) * w * 0.035;
+      const dy = Math.cos(t * 0.05) * h * 0.03;
+      ctx.drawImage(this.fog, -w * 0.03 + dx, -h * 0.03 + dy, w * 1.06, h * 1.06);
     }
 
-    // ışık huzmeleri
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < 4; i++) {
-      const ang = -Math.PI / 2 + Math.sin(t * 0.18 + i * 1.6) * 0.5 + (i - 1.5) * 0.35;
-      const ox = w * (0.15 + i * 0.23), oy = -20;
-      const len = h * 1.25;
-      const spread = 0.12;
-      ctx.beginPath();
-      ctx.moveTo(ox, oy);
-      ctx.lineTo(ox + Math.cos(ang + Math.PI - spread) * -len, oy + Math.sin(ang + Math.PI - spread) * -len);
-      ctx.lineTo(ox + Math.cos(ang + Math.PI + spread) * -len, oy + Math.sin(ang + Math.PI + spread) * -len);
-      ctx.closePath();
-      const g = ctx.createLinearGradient(ox, oy, ox, oy + len);
-      const c = i % 2 ? '90,170,255' : '190,90,255';
-      g.addColorStop(0, `rgba(${c},0.16)`);
-      g.addColorStop(1, `rgba(${c},0)`);
-      ctx.fillStyle = g;
-      ctx.fill();
+    // ışık huzmeleri (pişirilmiş, kare başına yalnız blit)
+    if (this.beams) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const bw = Math.max(80, w * 0.13);
+      const bl = h * 1.35;
+      for (let i = 0; i < 4; i++) {
+        const ang = (i - 1.5) * 0.17 + Math.sin(t * 0.18 + i * 1.6) * 0.1;
+        ctx.save();
+        ctx.translate(w * (0.15 + i * 0.23), -20);
+        ctx.rotate(ang);
+        ctx.globalAlpha = 0.55;
+        ctx.drawImage(this.beams[i % 2], -bw / 2, 0, bw, bl);
+        ctx.restore();
+      }
+      ctx.restore();
     }
-    ctx.restore();
 
     // uzakta büyük elmas siluetleri
     for (const gm of this.gems) {

@@ -7,7 +7,7 @@
 
 import CONFIG from '../config/gameConfig.js';
 import { STRIPS } from '../engine/slotEngine.js';
-import { symbolURL, SYMBOL_ANIM } from './symbols.js';
+import { symbolURL, spriteURL, SYMBOL_ANIM } from './symbols.js';
 
 const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
 
@@ -42,9 +42,12 @@ class Reel {
     this.v = 0;
     this.blur = false;
     this.cellPx = 100;
+    this._whole = null;     // son çizilen tam hücre (aynıysa hücreler yenilenmez)
+    this._variant = null;
   }
 
   setSize(cellPx) {
+    if (this.cellPx === cellPx) return;
     this.cellPx = cellPx;
     this.cells.forEach((c) => { c.el.style.transform = `translate3d(0, ${c.k * cellPx}px, 0)`; });
     this.render(true);
@@ -55,13 +58,18 @@ class Reel {
   render(force = false) {
     const whole = Math.floor(this.d);
     const frac = this.d - whole;
+    this.track.style.transform = `translate3d(0, ${(frac * this.cellPx).toFixed(2)}px, 0)`;
+    // Hızlı yol: hücre konumu ve görünüm değişmediyse DOM'a hiç dokunma.
+    const variant = this.blur ? 'blur' : 'normal';
+    if (!force && whole === this._whole && variant === this._variant) return;
+    this._whole = whole;
+    this._variant = variant;
     const top = ((this.base - whole) % this.L + this.L) % this.L;
     this.top = top;
-    this.track.style.transform = `translate3d(0, ${(frac * this.cellPx).toFixed(2)}px, 0)`;
-    const variant = this.blur ? 'blur' : 'normal';
     for (const c of this.cells) {
       const sym = this.strip[((top + c.k) % this.L + this.L) % this.L];
-      const src = symbolURL(sym, variant);
+      // Pişirilmiş bitmap hazırsa onu kullan (SVG'den kat kat hızlı).
+      const src = spriteURL(sym, variant) ?? symbolURL(sym, variant);
       if (force || c.src !== src) {
         c.img.src = src;
         c.src = src;
@@ -98,6 +106,9 @@ export class ReelSet {
   grid() { return this.reels.map((r) => [0, 1, 2].map((row) => r.symAt(row))); }
 
   cell(reel, row) { return this.reels[reel].cellEl(row); }
+
+  /** Tüm hücreleri yeniden çizer (sprite'lar hazır olduğunda çağrılır). */
+  refresh() { this.reels.forEach((r) => r.render(true)); }
 
   /** Dönüşü başlat (sonuç henüz gelmemiş olabilir). */
   start() {

@@ -8,8 +8,8 @@ import { seededRandom } from './engine/rng.js';
 import { DemoEngine, LiveEngine, readInjectedSession, clearTokensFromUrl, translateLiveError } from './engine/engines.js';
 import { topSymbol } from './engine/stats.js';
 import { StateMachine, SpinLock, STATES } from './game/stateMachine.js';
-import { symbolURL, symbolSVG, preloadSymbols, SYMBOL_GLOW } from './render/symbols.js';
-import { computeLayout, cabinetSVG, logoSVG } from './render/cabinet.js';
+import { symbolURL, symbolSVG, preloadSymbols, SYMBOL_GLOW, spriteURL, prepareSprites } from './render/symbols.js';
+import { computeLayout, cabinetSVG, logoSVG, bulbSpots } from './render/cabinet.js';
 import { ReelSet } from './render/reels.js';
 import { BackgroundFX, BurstFX, detectIntensity } from './render/fx.js';
 import { SoundEngine } from './audio/sound.js';
@@ -76,7 +76,7 @@ async function boot() {
   burst = new BurstFX($('fx'), intensity);
 
   reels = new ReelSet($('reels'), { reducedMotion: reduced, onStop: () => reelsStopped?.() });
-  doLayout();
+  doLayout(true);
   new ResizeObserver(() => doLayout()).observe($('stage'));
   $('reels').classList.add('idle');
 
@@ -85,7 +85,8 @@ async function boot() {
   renderBet();
 
   await Promise.all([
-    preloadSymbols(CONFIG.SYMBOLS.map((s) => s.id)),
+    preloadSymbols(CONFIG.SYMBOLS.map((s) => s.id), ['normal']),
+    ensureSprites(),
     connect(),
   ]);
   game.ready = true;
@@ -154,11 +155,20 @@ function renderUser(fromServer = null) {
 }
 
 // ─── yerleşim ───────────────────────────────────────────────────────────────
-function doLayout() {
+let layoutKey = '';
+let spriteTimer = 0;
+let spritePx = 0;
+let spriteRun = 0;
+
+function doLayout(force = false) {
   const st = $('stage');
-  const w = st.clientWidth;
-  const h = st.clientHeight - 10;
+  const w = Math.round(st.clientWidth);
+  const h = Math.round(st.clientHeight) - 10;
   if (w < 50 || h < 50) return;
+  // Aynı boyut tekrar gelirse (adres çubuğu, klavye, tema) hiçbir şeyi yeniden kurma.
+  const key = `${w}x${h}`;
+  if (!force && key === layoutKey) return;
+  layoutKey = key;
   layout = computeLayout(w, h, CONFIG.REELS, CONFIG.ROWS);
   const m = $('machine');
   m.style.width = `${layout.W}px`;
@@ -166,13 +176,69 @@ function doLayout() {
   $('cabinet').innerHTML = cabinetSVG(layout);
   const mq = $('marquee');
   mq.style.height = `${layout.marquee + layout.top * 0.2}px`;
-  mq.innerHTML = logoSVG(Math.min(layout.W * 0.56, 320));
+  mq.innerHTML = logoSVG(Math.min(layout.W * 0.56, 320)) + '<i class="mq-shine" aria-hidden="true"></i>';
   const win = $('reel-window');
   Object.assign(win.style, { left: `${layout.winX}px`, top: `${layout.winY}px`, width: `${layout.winW}px`, height: `${layout.winH}px` });
   $('paylines').setAttribute('viewBox', `0 0 ${layout.winW} ${layout.winH}`);
+  const ring = $('neon-ring');
+  if (ring) {
+    Object.assign(ring.style, {
+      left: `${(layout.winX - 5).toFixed(1)}px`, top: `${(layout.winY - 5).toFixed(1)}px`,
+      width: `${(layout.winW + 10).toFixed(1)}px`, height: `${(layout.winH + 10).toFixed(1)}px`,
+    });
+  }
+  renderBulbs();
   reels.setSize(layout.cell, layout.gap);
   if (game.last && sm.state === STATES.IDLE) showWinMarks(game.last, false);
+  queueSprites();
 }
+
+/**
+ * Ampuller SVG'den ayrı, kendi katmanında. Yalnız `opacity` animasyonu
+ * oynadığı için kasa SVG'si hiç yeniden boyanmaz (telefonda büyük kazanç).
+ */
+function renderBulbs() {
+  const host = $('bulbs');
+  if (!host || !layout) return;
+  const frag = document.createDocumentFragment();
+  for (const s of bulbSpots(layout)) {
+    const b = document.createElement('i');
+    b.className = s.kind === 'top' ? 'bulb top' : 'bulb';
+    b.style.setProperty('--i', String(s.i));
+    b.style.left = `${(s.x - s.r).toFixed(1)}px`;
+    b.style.top = `${(s.y - s.r).toFixed(1)}px`;
+    b.style.width = `${(s.r * 2).toFixed(1)}px`;
+    b.style.height = `${(s.r * 2).toFixed(1)}px`;
+    frag.appendChild(b);
+  }
+  host.replaceChildren(frag);
+}
+
+/** Makara hücresinin gerçek piksel boyutu (sprite hedefi). */
+function spriteTargetPx() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  return Math.round(layout.cell * 0.92 * dpr);
+}
+
+/** Boyut değişince sprite'ları yeniden pişir (debounce'lu). */
+function queueSprites() {
+  clearTimeout(spriteTimer);
+  spriteTimer = setTimeout(() => { ensureSprites(); }, 240);
+}
+
+async function ensureSprites() {
+  if (!layout || !reels) return;
+  const px = spriteTargetPx();
+  if (px === spritePx) return;
+  const run = ++spriteRun;
+  await prepareSprites(CONFIG.SYMBOLS.map((s) => s.id), px);
+  if (run !== spriteRun) return;   // daha yeni bir istek var
+  spritePx = px;
+  reels.refresh();
+}
+
+/** Hücre görseli: pişirilmiş bitmap varsa o, yoksa SVG. */
+const cellURL = (sym, variant) => spriteURL(sym, variant) ?? symbolURL(sym, variant);
 
 const cellCenter = (reel, row) => [reel * (layout.cell + layout.gap) + layout.cell / 2, row * layout.cell + layout.cell / 2];
 
@@ -282,6 +348,7 @@ async function spin() {
     sm.go(STATES.REQUESTING);
     sound.spinStart();
     sound.reelLoop(CONFIG.REELS);
+    bg.setFps(15);   // dönüş sırasında arka planı yavaşlat (makaralara bütçe)
     const startedAt = performance.now();
     const stopped = waitReels();
     reels.start();
@@ -295,6 +362,7 @@ async function spin() {
       reels.abort(startedAt);
       await stopped;
       sound.reelStop(true);
+      bg.setFps(24);
       sm.go(STATES.IDLE);
       toast(e.message || 'Çevirme yapılamadı.');
       try { applyState(await game.engine.refresh()); } catch { setBalance(game.balance + game.bet); }
@@ -315,6 +383,7 @@ async function spin() {
     });
     await stopped;
     sound.reelStop(true);
+    bg.setFps(24);
 
     // Güvenlik: makaralarda görünen tahta sonuçla aynı olmalı.
     const shown = reels.grid();
@@ -370,7 +439,7 @@ function clearWinMarks() {
   document.querySelectorAll('.cell.win').forEach((c) => {
     c.classList.remove('win');
     const img = c.querySelector('img');
-    if (c.dataset.sym) img.src = symbolURL(c.dataset.sym, 'normal');
+    if (c.dataset.sym) img.src = cellURL(c.dataset.sym, 'normal');
   });
 }
 
@@ -387,7 +456,7 @@ function showWinMarks(r, animate = true) {
     const c = reels.cell(reel, row);
     c.classList.add('win');
     c.style.setProperty('--glow', SYMBOL_GLOW[c.dataset.sym] ?? '#ffd34d');
-    c.querySelector('img').src = symbolURL(c.dataset.sym, 'win');
+    c.querySelector('img').src = cellURL(c.dataset.sym, 'win');
     const f = document.createElement('div');
     f.className = `wframe${bonusSet.has(`${reel}:${row}`) ? ' is-bonus' : ''}`;
     const [x, y] = cellCenter(reel, row);
