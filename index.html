@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+    <title>Diamond Slot · Retra Live</title>
+    <meta name="description" content="Retra Live · Diamond Slot — 5 makaralı, 20 çizgili elmas slotu." />
+    <meta name="theme-color" content="#0b0320" />
+    <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+    <link rel="stylesheet" href="./css/diamond-slot.css" />
+  </head>
+  <body>
+    <canvas id="bg-fx" class="bg-fx" aria-hidden="true"></canvas>
+
+    <div id="app" class="app" data-state="loading">
+      <!-- ÜST ALAN -->
+      <header class="topbar">
+        <button id="btn-back" class="icon-btn" aria-label="Geri dön">
+          <svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" /></svg>
+        </button>
+        <div class="brand" id="brand"></div>
+        <div class="top-right">
+          <button id="btn-sound" class="icon-btn" aria-label="Ses ayarları">
+            <svg viewBox="0 0 24 24" class="ico-on"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></svg>
+            <svg viewBox="0 0 24 24" class="ico-off"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="m17 9 5 6m0-6-5 6" /></svg>
+          </button>
+          <button id="btn-info" class="icon-btn" aria-label="Oyun bilgisi">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.5" /></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="userbar">
+        <div class="who" id="who"></div>
+        <div class="mode-chip" id="mode-chip"></div>
+      </div>
+
+      <!-- ORTA ALAN: SLOT MAKİNESİ -->
+      <main class="stage" id="stage">
+        <div class="machine" id="machine">
+          <div class="cabinet" id="cabinet"></div>
+          <div class="marquee" id="marquee"></div>
+          <div class="reel-window" id="reel-window">
+            <div class="reels" id="reels"></div>
+            <svg class="paylines" id="paylines" aria-hidden="true"></svg>
+            <div class="frames" id="frames" aria-hidden="true"></div>
+            <div class="glass" aria-hidden="true"></div>
+          </div>
+          <div class="win-banner" id="win-banner" aria-live="polite"></div>
+        </div>
+      </main>
+
+      <!-- ALT ALAN -->
+      <section class="hud">
+        <div class="meters">
+          <div class="meter">
+            <span class="lbl">BAKİYE</span>
+            <b id="balance" class="val"><i class="gem-ico"></i><span>—</span></b>
+          </div>
+          <div class="meter meter-win">
+            <span class="lbl">KAZANÇ</span>
+            <b id="last-win" class="val"><span>0</span></b>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="bet" id="bet">
+            <button id="bet-minus" class="round-btn" aria-label="Bahsi azalt">−</button>
+            <div class="bet-val"><span class="lbl">BAHİS</span><b id="bet-value">—</b></div>
+            <button id="bet-plus" class="round-btn" aria-label="Bahsi artır">+</button>
+          </div>
+
+          <button id="btn-spin" class="spin-btn" aria-label="Çevir">
+            <span class="spin-ring"></span>
+            <span class="spin-core">
+              <svg viewBox="0 0 48 48" class="spin-ico"><path d="M38 24a14 14 0 1 1-4.1-9.9" /><path d="M36 6v9h-9" /></svg>
+              <b class="spin-txt">SPIN</b>
+            </span>
+          </button>
+
+          <div class="side-btns">
+            <button id="btn-auto" class="pill-btn" aria-label="Otomatik dönüş"><span>AUTO</span><b id="auto-left"></b></button>
+            <button id="btn-history" class="pill-btn" aria-label="Geçmiş ve istatistik"><span>GEÇMİŞ</span></button>
+          </div>
+        </div>
+
+        <div class="last-result" id="last-result">Son tur: —</div>
+      </section>
+    </div>
+
+    <canvas id="fx" class="fx" aria-hidden="true"></canvas>
+
+    <!-- BÜYÜK KAZANÇ -->
+    <div id="bigwin" class="bigwin" hidden>
+      <div class="bw-rays"></div>
+      <div class="bw-gem" id="bw-gem"></div>
+      <div class="bw-title" id="bw-title"></div>
+      <div class="bw-amount"><i class="gem-ico"></i><b id="bw-amount">0</b></div>
+      <div class="bw-hint">Devam etmek için dokun</div>
+    </div>
+
+    <!-- BONUS -->
+    <div id="bonus" class="bonus" hidden>
+      <div class="bn-bg"></div>
+      <div class="bn-title">KRİSTAL SANDIK</div>
+      <div class="bn-sub" id="bn-sub">Sandığı açmak için dokun</div>
+      <button class="bn-chest" id="bn-chest" aria-label="Sandığı aç"></button>
+      <div class="bn-reward" id="bn-reward"></div>
+      <button class="bn-collect pill-btn gold" id="bn-collect" hidden>TOPLA</button>
+    </div>
+
+    <!-- ALT PANEL (bilgi / geçmiş / ses / oto) -->
+    <div id="sheet" class="sheet" hidden>
+      <div class="sheet-card">
+        <div class="sheet-head"><b id="sheet-title"></b><button class="icon-btn small" id="sheet-close" aria-label="Kapat"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg></button></div>
+        <div class="sheet-body" id="sheet-body"></div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <div id="loader" class="loader">
+      <div class="ld-gem" id="ld-gem"></div>
+      <div class="ld-bar"><i></i></div>
+      <div class="ld-txt">Diamond Slot yükleniyor</div>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
