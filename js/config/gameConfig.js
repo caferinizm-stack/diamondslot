@@ -115,9 +115,9 @@ export const SOUND = {
 /** Görsel efekt yoğunluğu: 'high' | 'medium' | 'low' (cihaza göre otomatik). */
 export const FX = {
   intensity: 'auto',
-  particles: { high: 70, medium: 42, low: 18 },
-  shards: { high: 90, medium: 55, low: 24 },
-  maxDpr: 2,
+  particles: { high: 28, medium: 18, low: 10 },
+  shards: { high: 36, medium: 24, low: 14 },
+  maxDpr: 1.25,
 };
 
 /** Kayıt. */

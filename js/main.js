@@ -489,11 +489,15 @@ function countUp(el, to, ms, onTick) {
   return new Promise((res) => {
     const t0 = performance.now();
     let lastTick = 0;
+    let lastDom = 0;
     const step = (t) => {
       const u = Math.min(1, (t - t0) / ms);
-      const v = Math.round(to * (1 - Math.pow(1 - u, 2.4)));
-      el.textContent = fmt(v);
-      if (onTick && t - lastTick > 70 && u < 1) { lastTick = t; onTick(); }
+      if (u >= 1 || t - lastDom >= 34) {
+        lastDom = t;
+        const v = Math.round(to * (1 - Math.pow(1 - u, 2.4)));
+        el.textContent = fmt(v);
+      }
+      if (onTick && t - lastTick > 105 && u < 1) { lastTick = t; onTick(); }
       if (u < 1) requestAnimationFrame(step); else res();
     };
     requestAnimationFrame(step);
@@ -556,20 +560,19 @@ function cycleLines(r) {
 async function runBigWin(r) {
   const ov = $('bigwin');
   const mega = r.tier === 'mega';
-  const g = symbolURL('blue', 'glow');
-  $('bw-gem').innerHTML = `<div class="spinner"><img src="${g}" alt=""><img src="${g}" alt=""></div>`;
+  const g = cellURL('blue', 'glow');
+  $('bw-gem').innerHTML = `<div class="spinner"><img src="${g}" alt=""></div>`;
   const letters = [...'DIAMOND WIN!'].map((ch, i) => (ch === ' ' ? '<span class="sp"></span>' : `<span style="--i:${i}">${ch}</span>`)).join('');
   $('bw-title').innerHTML = `${mega ? '<div class="bw-mega">MEGA</div>' : ''}<div class="bw-row">${letters}</div>`;
   $('bw-amount').textContent = '0';
   ov.hidden = false;
   ov.classList.remove('out');
   bg.stop();   // arka plan karartıldı: çizmeye gerek yok
-  $('machine').classList.add('zoom', 'celebrate');
   sound.bigWin();
   const cx = innerWidth / 2, cy = innerHeight * 0.42;
-  burst.bigBurst(cx, cy, mega ? 1.6 : 1);
-  burst.rain(mega ? 4.5 : 3, mega ? 40 : 24);
-  setTimeout(() => burst.bigBurst(cx, cy, 0.6), T(900));
+  burst.bigBurst(cx, cy, mega ? 1.15 : 0.85);
+  burst.rain(mega ? 4 : 2.8, mega ? 22 : 14);
+  setTimeout(() => { if (!ov.hidden) burst.bigBurst(cx, cy, 0.45); }, T(900));
 
   const dur = T(mega ? CONFIG.TIMING.megaWinMs : CONFIG.TIMING.bigWinMs);
   let skip;
@@ -581,8 +584,7 @@ async function runBigWin(r) {
   await Promise.race([sleep(dur * 0.45 + (game.autoLeft > 0 ? 0 : 600)), skipP]);
   ov.removeEventListener('click', onTap);
   ov.classList.add('out');
-  $('machine').classList.remove('zoom', 'celebrate');
-  await sleep(380);
+  await sleep(350);
   ov.hidden = true;
   bg.start();
 }
@@ -592,7 +594,7 @@ async function runBonus(r) {
   const ov = $('bonus');
   const chest = $('bn-chest');
   chest.className = 'bn-chest idle';
-  chest.innerHTML = symbolSVG('bonus', 'glow', { size: 300 });
+  chest.innerHTML = symbolSVG('bonus', 'glow', { size: 280 });
   $('bn-reward').innerHTML = '';
   $('bn-collect').hidden = true;
   $('bn-sub').textContent = `${r.bonus.count} BONUS sembolü! Sandığı açmak için dokun`;
@@ -607,13 +609,13 @@ async function runBonus(r) {
   chest.className = 'bn-chest shake';
   $('bn-sub').textContent = 'Açılıyor…';
   sound.bonusOpen();
-  await sleep(T(1000));
+  await sleep(T(920));
   chest.className = 'bn-chest open';
   const rect = chest.getBoundingClientRect();
-  burst.bigBurst(rect.left + rect.width / 2, rect.top + rect.height * 0.45, 0.8);
+  burst.bigBurst(rect.left + rect.width / 2, rect.top + rect.height * 0.45, 0.65);
   $('bn-sub').textContent = 'Kristal Sandık ödülü';
   $('bn-reward').innerHTML = `<div class="amt"><i class="gem-ico" style="background-image:url(${CRYSTAL_ICON})"></i><b id="bn-amt">0</b></div><div class="mult">BAHİS × ${r.bonus.reward.mult}</div>`;
-  await countUp($('bn-amt'), r.bonus.reward.amount, T(1200), () => sound.tick());
+  await countUp($('bn-amt'), r.bonus.reward.amount, T(1100), () => sound.tick());
   $('bn-collect').hidden = false;
   await new Promise((res) => {
     const go = () => { $('bn-collect').removeEventListener('click', go); clearTimeout(auto); res(); };

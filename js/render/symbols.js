@@ -28,9 +28,7 @@ const sparkle = (x, y, s, color = '#fff', op = 1) =>
 /** Ortak tanımlar: gölge, hale, parıltı süzgeçleri. */
 function baseDefs(p, glowColor) {
   return `
-  <filter id="${p}soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
-  <filter id="${p}soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.2"/></filter>
-  ${rad(`${p}halo`, [[0, glowColor, 0.55], [0.45, glowColor, 0.18], [1, glowColor, 0]])}
+  ${rad(`${p}halo`, [[0, glowColor, 0.58], [0.48, glowColor, 0.22], [1, glowColor, 0]])}
   ${rad(`${p}shadow`, [[0, '#000', 0.55], [1, '#000', 0]])}
   ${lin(`${p}prism`, [[0, '#ff4fd8', 0.0], [0.2, '#ff4fd8', 0.55], [0.4, '#ffe14f', 0.55], [0.6, '#4fffb0', 0.55], [0.8, '#4fb8ff', 0.55], [1, '#4fb8ff', 0]], 0, 0, 1, 1)}
   ${lin(`${p}sheen`, [[0, '#fff', 0], [0.45, '#fff', 0], [0.5, '#fff', 0.85], [0.55, '#fff', 0], [1, '#fff', 0]], 0, 0, 1, 0.35)}`;
@@ -58,8 +56,8 @@ function brilliantSide(p, pal) {
   s += poly([P1, P3, [134, 56], [66, 56]], `url(#${p}table)`, 'opacity=".85"');
   s += `<path d="M20 84 H180" stroke="${pal.edge}" stroke-width="2.2" stroke-opacity=".9"/>`;
   // Işık kırılması: tayf şeritleri
-  s += poly([[60, 84], [100, 176], [86, 84]], `url(#${p}prism)`, 'opacity=".55" style="mix-blend-mode:screen"');
-  s += poly([[120, 84], [100, 176], [140, 84]], `url(#${p}prism)`, 'opacity=".35" style="mix-blend-mode:screen"');
+  s += poly([[60, 84], [100, 176], [86, 84]], `url(#${p}prism)`, 'opacity=".45"');
+  s += poly([[120, 84], [100, 176], [140, 84]], `url(#${p}prism)`, 'opacity=".28"');
   // İç yansımalar
   s += `<path d="M48 84 L100 160 L152 84" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="1.4"/>`;
   s += `<path d="M78 46 L100 84 L122 46" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.2"/>`;
@@ -96,7 +94,7 @@ function brilliantTop(p, pal) {
     s += poly([ia, o, ib], `url(#${p}f${(i % 3) + 4})`, `stroke="${pal.edge}" stroke-width=".8" stroke-opacity=".5"`);
   }
   s += `<polygon points="${pts(inner)}" fill="url(#${p}table)" stroke="#fff" stroke-opacity=".55" stroke-width="1.3"/>`;
-  s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#${p}prism)" opacity=".28" style="mix-blend-mode:screen"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#${p}prism)" opacity=".22"/>`;
   s += `<path d="M${cx - 30} ${cy - 22} Q${cx} ${cy - 40} ${cx + 30} ${cy - 22}" stroke="#fff" stroke-opacity=".6" stroke-width="3" fill="none" stroke-linecap="round"/>`;
   return {
     defs: facetGrads(p, pal.f) + rad(`${p}table`, [[0, '#ffffff', 0.95], [0.4, pal.f[0][1], 0.75], [1, pal.f[3][1], 0.6]], 0.4, 0.35, 0.8)
@@ -126,7 +124,7 @@ function princess(p, pal) {
   // Metalik bantlar
   s += `<path d="M30 34 L170 174 M170 34 L30 174" stroke="#fff6c8" stroke-opacity=".45" stroke-width="1.4"/>`;
   s += poly([[30, 34], [70, 34], [30, 74]], '#fffbe6', 'opacity=".55"');
-  s += `<rect x="30" y="34" width="140" height="140" fill="url(#${p}prism)" opacity=".18" style="mix-blend-mode:screen"/>`;
+  s += `<rect x="30" y="34" width="140" height="140" fill="url(#${p}prism)" opacity=".16"/>`;
   return {
     defs: facetGrads(p, pal.f) + lin(`${p}table`, [[0, '#fffbe0'], [0.5, '#ffd34d'], [1, '#b8720f']], 0, 0, 1, 1)
       + lin(`${p}rim`, [[0, pal.neon[0]], [0.5, '#fff3b0'], [1, pal.neon[1]]], 0, 0, 1, 1),
@@ -153,7 +151,7 @@ function cushion(p, pal) {
     s += poly([R2[i], R2[j], R3[j]], `url(#${p}f${[2, 5, 3, 6, 4, 1][i % 6]})`, `stroke="${pal.edge}" stroke-width=".8" stroke-opacity=".45"`);
   }
   s += `<polygon points="${pts(R3)}" fill="url(#${p}table)" stroke="#ffd6dc" stroke-opacity=".6"/>`;
-  s += `<ellipse cx="${cx}" cy="${cy + 10}" rx="44" ry="50" fill="url(#${p}inner)" style="mix-blend-mode:screen"/>`;
+  s += `<ellipse cx="${cx}" cy="${cy + 10}" rx="44" ry="50" fill="url(#${p}inner)" opacity=".75"/>`;
   s += `<path d="M58 70 Q78 40 112 36" stroke="#fff" stroke-opacity=".7" stroke-width="5" stroke-linecap="round" fill="none"/>`;
   return {
     defs: facetGrads(p, pal.f) + rad(`${p}table`, [[0, '#ffe0e6'], [0.6, '#ff3b5c'], [1, '#8a0022']], 0.4, 0.3, 0.8)
@@ -180,7 +178,7 @@ function emeraldCut(p, pal) {
   }
   s += `<polygon points="${pts(L[3])}" fill="url(#${p}table)" stroke="#e6fff2" stroke-opacity=".6"/>`;
   s += `<path d="M84 74 L84 134" stroke="#fff" stroke-opacity=".35" stroke-width="2"/><path d="M116 74 L116 134" stroke="#000" stroke-opacity=".15" stroke-width="2"/>`;
-  s += `<polygon points="${pts(L[0])}" fill="url(#${p}prism)" opacity=".2" style="mix-blend-mode:screen"/>`;
+  s += `<polygon points="${pts(L[0])}" fill="url(#${p}prism)" opacity=".18"/>`;
   return {
     defs: facetGrads(p, pal.f) + lin(`${p}table`, [[0, '#d8ffe9'], [0.5, '#2ee089'], [1, '#05663c']], 0, 0, 1, 1)
       + lin(`${p}rim`, [[0, pal.neon[0]], [1, pal.neon[1]]], 0, 0, 1, 1),
@@ -250,7 +248,7 @@ function mystery(p) {
   let s = '';
   const shades = [`url(#${p}m0)`, `url(#${p}m1)`, `url(#${p}m2)`, `url(#${p}m3)`, `url(#${p}m2)`, `url(#${p}m1)`];
   for (let i = 0; i < 6; i++) s += poly([hex[i], hex[(i + 1) % 6], c], shades[i], 'stroke="#d9b8ff" stroke-width="1.1" stroke-opacity=".5"');
-  s += `<ellipse cx="100" cy="106" rx="40" ry="56" fill="url(#${p}mist)" style="mix-blend-mode:screen"/>`;
+  s += `<ellipse cx="100" cy="106" rx="40" ry="56" fill="url(#${p}mist)" opacity=".85"/>`;
   s += `<path d="M84 84 Q84 66 100 66 Q118 66 118 82 Q118 94 104 100 Q100 102 100 112 M100 126 L100 128" stroke="url(#${p}rune)" stroke-width="9" stroke-linecap="round" fill="none"/>`;
   s += `<path d="M84 84 Q84 66 100 66 Q118 66 118 82 Q118 94 104 100 Q100 102 100 112 M100 126 L100 128" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".85"/>`;
   return {
@@ -393,19 +391,20 @@ export function symbolSVG(id, variant = 'normal', opts = {}) {
   const size = opts.size ?? 200;
   const blurF = variant === 'blur'
     ? `<filter id="${p}mb" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="0 10"/></filter>` : '';
-  const winF = variant === 'win' || variant === 'glow'
-    ? `<filter id="${p}bloom" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/><feColorMatrix in="b" type="matrix" values="1.6 0 0 0 .14  0 1.6 0 0 .14  0 0 1.6 0 .14  0 0 0 1 0" result="bb"/><feMerge><feMergeNode in="bb"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` : '';
+  const extraHalo = variant === 'win' || variant === 'glow'
+    ? `<circle cx="100" cy="104" r="${variant === 'glow' ? 98 : 94}" fill="url(#${p}halo)" opacity="${variant === 'glow' ? 0.48 : 0.32}"/>` : '';
   const content = `
     <ellipse cx="100" cy="186" rx="62" ry="10" fill="url(#${p}shadow)"/>
-    <g filter="${variant === 'win' || variant === 'glow' ? `url(#${p}bloom)` : ''}">
+    <g>
       ${a.body}
       ${a.outline}
-      <g clip-path="url(#${p}clip)"><rect class="sheen" x="-200" y="0" width="400" height="200" fill="url(#${p}sheen)" opacity="${variant === 'normal' ? 0.35 : 0.7}"/></g>
+      <g clip-path="url(#${p}clip)"><rect class="sheen" x="-200" y="0" width="400" height="200" fill="url(#${p}sheen)" opacity="${variant === 'normal' ? 0.35 : variant === 'glow' ? 0.75 : 0.65}"/></g>
     </g>
     ${variant === 'blur' ? '' : a.sparkles}`;
   return `<svg xmlns="${NS}" viewBox="0 0 200 200" width="${size}" height="${size}">
-  <defs>${baseDefs(p, art.glow)}${a.defs}<clipPath id="${p}clip">${a.sheenClip}</clipPath>${blurF}${winF}</defs>
+  <defs>${baseDefs(p, art.glow)}${a.defs}<clipPath id="${p}clip">${a.sheenClip}</clipPath>${blurF}</defs>
   <circle cx="100" cy="104" r="${variant === 'normal' ? 92 : 100}" fill="url(#${p}halo)" opacity="${halo}"/>
+  ${extraHalo}
   ${variant === 'blur' ? `<g filter="url(#${p}mb)" opacity=".92">${content}</g>` : content}
 </svg>`;
 }
@@ -433,7 +432,7 @@ export function symbolURL(id, variant = 'normal') {
 
 let spritePx = 0;
 const spriteCache = new Map();   // `${id}:${variant}` → blob URL
-const FALLBACK_VARIANTS = ['win'];
+const FALLBACK_VARIANTS = ['glow'];
 
 function bakeSprite(id, variant, px) {
   const key = `${id}:${variant}`;
@@ -470,7 +469,7 @@ function bakeSprite(id, variant, px) {
  * @param {number} px hücrenin cihaz piksel boyutu
  * @param {string[]} variants önce pişirilecek görünümler
  */
-export async function prepareSprites(ids, px, variants = ['normal', 'blur']) {
+export async function prepareSprites(ids, px, variants = ['normal', 'blur', 'win']) {
   const size = Math.max(24, Math.min(512, Math.round(px)));
   if (spritePx !== size) {
     const old = [...spriteCache.values()];
@@ -481,10 +480,10 @@ export async function prepareSprites(ids, px, variants = ['normal', 'blur']) {
   }
   const list = variants.filter((v) => !FALLBACK_VARIANTS.includes(v));
   await Promise.all(ids.flatMap((id) => list.map((v) => bakeSprite(id, v, size))));
-  // Kalan görünümler (kazanma çerçevesi) boş zamanda pişirilir.
+  // Kalan görünümler (glow) hemen ardından pişirilir.
   setTimeout(() => {
     ids.forEach((id) => FALLBACK_VARIANTS.forEach((v) => bakeSprite(id, v, size)));
-  }, 1200);
+  }, 300);
 }
 
 /** Pişirilmiş sprite adresi (hazır değilse null → SVG'ye düşülür). */

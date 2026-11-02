@@ -90,14 +90,10 @@ export function cabinetSVG(L) {
   <linearGradient id="cab-window" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="#0d0322"/><stop offset=".5" stop-color="#1c0844"/><stop offset="1" stop-color="#0d0322"/>
   </linearGradient>
-  <filter id="cab-neon" x="-20%" y="-20%" width="140%" height="140%">
-    <feGaussianBlur stdDeviation="${r2(W * 0.012)}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-  <filter id="cab-shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="${r2(W * 0.02)}" stdDeviation="${r2(W * 0.025)}" flood-color="#000" flood-opacity=".7"/></filter>
 </defs>
 
 <!-- gövde -->
-<g filter="url(#cab-shadow)">
+<g>
   <path d="${arch}" fill="url(#cab-metal)" stroke="url(#cab-gold)" stroke-width="${r2(W * 0.012)}"/>
   <rect x="${r2(W * 0.012)}" y="${r2(marquee * 0.7)}" width="${r2(W - W * 0.024)}" height="${r2(H - marquee * 0.7 - W * 0.006)}" rx="${r2(R)}" fill="url(#cab-body)" stroke="url(#cab-gold)" stroke-width="${r2(W * 0.014)}"/>
 </g>
@@ -105,13 +101,13 @@ export function cabinetSVG(L) {
 
 <!-- üst kemer neon -->
 <path class="neon" d="M${r2(R * 1.5)} ${r2(archH - 4)} Q${r2(R * 1.5)} ${r2(marquee * 0.16)} ${r2(W * 0.5)} ${r2(marquee * 0.12)} Q${r2(W - R * 1.5)} ${r2(marquee * 0.16)} ${r2(W - R * 1.5)} ${r2(archH - 4)}"
-  fill="none" stroke="#c45cff" stroke-width="${r2(W * 0.008)}" stroke-linecap="round" filter="url(#cab-neon)"/>
+  fill="none" stroke="#c45cff" stroke-width="${r2(W * 0.008)}" stroke-linecap="round"/>
 
 <!-- makara penceresi: altın çerçeve + neon iç kenar -->
 <rect x="${r2(winX - W * 0.026)}" y="${r2(winY - W * 0.026)}" width="${r2(winW + W * 0.052)}" height="${r2(winH + W * 0.052)}" rx="${r2(W * 0.03)}" fill="url(#cab-gold)" stroke="#4a2800" stroke-width="1.2"/>
 <rect x="${r2(winX - W * 0.012)}" y="${r2(winY - W * 0.012)}" width="${r2(winW + W * 0.024)}" height="${r2(winH + W * 0.024)}" rx="${r2(W * 0.02)}" fill="#07021a" stroke="#5e3300" stroke-width="1"/>
 <rect x="${r2(winX)}" y="${r2(winY)}" width="${r2(winW)}" height="${r2(winH)}" rx="${r2(W * 0.012)}" fill="url(#cab-window)"/>
-<rect class="neon" x="${r2(winX - W * 0.006)}" y="${r2(winY - W * 0.006)}" width="${r2(winW + W * 0.012)}" height="${r2(winH + W * 0.012)}" rx="${r2(W * 0.016)}" fill="none" stroke="#b44dff" stroke-width="${r2(Math.max(1.6, W * 0.005))}" filter="url(#cab-neon)"/>
+<rect class="neon" x="${r2(winX - W * 0.006)}" y="${r2(winY - W * 0.006)}" width="${r2(winW + W * 0.012)}" height="${r2(winH + W * 0.012)}" rx="${r2(W * 0.016)}" fill="none" stroke="#b44dff" stroke-width="${r2(Math.max(1.6, W * 0.005))}"/>
 
 <!-- yan ışık sütunları -->
 <rect x="${r2(winX * 0.2)}" y="${r2(winY)}" width="${r2(winX * 0.44)}" height="${r2(winH)}" rx="${r2(winX * 0.22)}" fill="#0a0220" stroke="url(#cab-gold-v)" stroke-width="1.4"/>
@@ -119,7 +115,7 @@ export function cabinetSVG(L) {
 
 <!-- alt kaide -->
 <path d="M${r2(W * 0.08)} ${r2(H - L.bottom * 0.75)} H${r2(W * 0.92)}" stroke="url(#cab-gold)" stroke-width="${r2(Math.max(2, W * 0.008))}" stroke-linecap="round"/>
-<path class="neon" d="M${r2(W * 0.2)} ${r2(H - L.bottom * 0.42)} H${r2(W * 0.8)}" stroke="#7ff6ff" stroke-width="${r2(Math.max(1.4, W * 0.004))}" stroke-linecap="round" filter="url(#cab-neon)" opacity=".8"/>
+<path class="neon" d="M${r2(W * 0.2)} ${r2(H - L.bottom * 0.42)} H${r2(W * 0.8)}" stroke="#7ff6ff" stroke-width="${r2(Math.max(1.4, W * 0.004))}" stroke-linecap="round" opacity=".8"/>
 ${rivet(W * 0.05, marquee * 0.82)}${rivet(W * 0.95, marquee * 0.82)}${rivet(W * 0.05, H - L.bottom * 0.6)}${rivet(W * 0.95, H - L.bottom * 0.6)}
 </svg>`;
 }
@@ -139,16 +135,15 @@ export function logoSVG(width = 300) {
   </linearGradient>
   <linearGradient id="lg-violet" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff7af5"/><stop offset=".5" stop-color="#b44dff"/><stop offset="1" stop-color="#5ad8ff"/></linearGradient>
   <linearGradient id="lg-gem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eafcff"/><stop offset=".5" stop-color="#46c8ff"/><stop offset="1" stop-color="#2a3bd8"/></linearGradient>
-  <filter id="lg-glow" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   <linearGradient id="lg-shine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
   <clipPath id="lg-clip"><text x="150" y="50" text-anchor="middle" font-family="'Arial Black','Segoe UI Black',Impact,sans-serif" font-weight="900" font-size="40" letter-spacing="1.5">DIAMOND</text></clipPath>
 </defs>
 <g font-family="'Arial Black','Segoe UI Black',Impact,sans-serif" font-weight="900" text-anchor="middle">
-  <text x="150" y="50" font-size="40" letter-spacing="1.5" fill="none" stroke="url(#lg-violet)" stroke-width="7" filter="url(#lg-glow)" opacity=".9">DIAMOND</text>
+  <text x="150" y="50" font-size="40" letter-spacing="1.5" fill="none" stroke="url(#lg-violet)" stroke-width="6.5" opacity=".75">DIAMOND</text>
   <text x="150" y="53" font-size="40" letter-spacing="1.5" fill="#2a0a00" opacity=".6">DIAMOND</text>
   <text x="150" y="50" font-size="40" letter-spacing="1.5" fill="url(#lg-gold)" stroke="#5a2a00" stroke-width="1.6" paint-order="stroke">DIAMOND</text>
   <rect x="98" y="60" width="104" height="22" rx="11" fill="#1a0640" stroke="url(#lg-violet)" stroke-width="2"/>
-  <text x="150" y="77" font-size="16" letter-spacing="8" fill="#e8d4ff" filter="url(#lg-glow)">SLOT</text>
+  <text x="150" y="77" font-size="16" letter-spacing="8" fill="#e8d4ff">SLOT</text>
 </g>
 <g transform="translate(150 10)">
   <polygon points="-12,0 12,0 18,6 0,22 -18,6" fill="url(#lg-gem)" stroke="#fff" stroke-width="1" stroke-opacity=".8" transform="translate(0 -6) scale(.7)"/>

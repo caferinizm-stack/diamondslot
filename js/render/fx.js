@@ -37,21 +37,20 @@ export class BackgroundFX {
     this.gems = [];
     this.t = 0;
     this.running = false;
-    // Uzak elmaslar: bir kez bulanıklaştırılmış küçük görüntüler (her karede filtre yok).
+    // Uzak elmaslar: bir kez küçük tuvale pişirilir (her karede filtre yok).
     this.imgs = ['blue', 'purple', 'gold'].map((id) => {
       const sprite = { ready: false, cv: document.createElement('canvas') };
       const i = new Image();
       i.onload = () => {
-        sprite.cv.width = sprite.cv.height = 128;
+        sprite.cv.width = sprite.cv.height = 96;
         const c = sprite.cv.getContext('2d');
-        c.filter = 'blur(3px)';
-        c.drawImage(i, 8, 8, 112, 112);
+        c.drawImage(i, 6, 6, 84, 84);
         sprite.ready = true;
       };
       i.src = symbolURL(id, 'normal');
       return sprite;
     });
-    this.frameGap = 1000 / 24;   // yavaş atmosfer: 24 kare/sn yeter (telefon CPU'su)
+    this.frameGap = 1000 / 18;   // yavaş atmosfer: 18 kare/sn yeter (mobil WebView bütçesi)
     this.resize();
     window.addEventListener('resize', () => this.resize());
     document.addEventListener('visibilitychange', () => (document.hidden ? this.stop() : this.start()));
@@ -196,7 +195,6 @@ export class BackgroundFX {
 
     // ışık parçacıkları
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
     for (let i = 0; i < this.parts.length; i++) {
       const p = this.parts[i];
       p.x += p.vx * dt; p.y += p.vy * dt; p.tw += dt * 2;
@@ -206,12 +204,6 @@ export class BackgroundFX {
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
-      if (p.r > 1.8) {
-        ctx.fillStyle = `hsla(${p.hue},100%,70%,${a * 0.18})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
     }
     ctx.restore();
   }
@@ -226,38 +218,61 @@ export class BurstFX {
     this.rings = [];
     this.flash = 0;
     this.running = false;
-    this.gemImgs = ['blue', 'purple', 'gold', 'ruby', 'emerald'].map((id) => { const i = new Image(); i.src = symbolURL(id, 'normal'); return i; });
+    this.maxItems = 48;
+    // Elmas görselleri bir kez küçük bitmap tuvallere pişirilir (SVG'yi her karede yeniden çizmez).
+    this.gemSprites = [];
+    this.gemImgs = ['blue', 'purple', 'gold', 'ruby', 'emerald'].map((id, idx) => {
+      const i = new Image();
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 56;
+      const entry = { img: i, cv, ready: false };
+      this.gemSprites[idx] = entry;
+      i.onload = () => {
+        const c = cv.getContext('2d');
+        c.drawImage(i, 0, 0, 56, 56);
+        entry.ready = true;
+      };
+      i.src = symbolURL(id, 'normal');
+      return i;
+    });
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
 
   resize() {
-    const { ctx, w, h } = fitCanvas(this.cv, Math.min(1.25, window.devicePixelRatio || 1));
+    const { ctx, w, h } = fitCanvas(this.cv, 1);
     this.ctx = ctx; this.w = w; this.h = h;
   }
 
   /** Küçük kazanç: hücre çevresinde altın kıvılcımlar. */
-  sparks(x, y, n = 14, hue = 45) {
-    for (let i = 0; i < n; i++) {
+  sparks(x, y, n = 10, hue = 45) {
+    const count = Math.min(n, Math.max(4, this.maxItems - this.items.length));
+    for (let i = 0; i < count; i++) {
       const a = rnd(0, Math.PI * 2), v = rnd(60, 220);
-      this.items.push({ kind: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, life: rnd(0.5, 0.9), age: 0, r: rnd(1, 2.6), hue });
+      this.items.push({ kind: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40, life: rnd(0.45, 0.8), age: 0, r: rnd(1.2, 2.6), hue });
     }
     this._run();
   }
 
   /** Büyük kazanç: mor ışık patlaması + elmas parçacıkları. */
   bigBurst(x, y, power = 1) {
-    const n = Math.round((CONFIG.FX.shards[this.intensity] ?? 50) * power);
-    this.flash = 1;
-    this.rings.push({ x, y, r: 10, v: Math.max(this.w, this.h) * 1.1, life: 1.1, age: 0, color: '190,90,255', width: 26 });
-    this.rings.push({ x, y, r: 0, v: Math.max(this.w, this.h) * 0.8, life: 1.3, age: -0.12, color: '120,220,255', width: 12 });
+    const rawN = Math.round((CONFIG.FX.shards[this.intensity] ?? 24) * power);
+    const n = Math.min(rawN, 36);
+    if (this.items.length + n > this.maxItems) {
+      this.items.splice(0, Math.max(0, this.items.length + n - this.maxItems));
+    }
+    this.flash = 0.85;
+    this.rings.push({ x, y, r: 10, v: Math.max(this.w, this.h) * 1.05, life: 0.95, age: 0, color: '190,90,255', width: 20 });
+    this.rings.push({ x, y, r: 0, v: Math.max(this.w, this.h) * 0.78, life: 1.1, age: -0.1, color: '120,220,255', width: 10 });
     for (let i = 0; i < n; i++) {
-      const a = rnd(0, Math.PI * 2), v = rnd(220, 900) * (0.6 + power * 0.4);
+      const a = rnd(0, Math.PI * 2), v = rnd(200, 780) * (0.6 + power * 0.35);
+      const sp = this.gemSprites[i % this.gemSprites.length];
       this.items.push({
         kind: Math.random() < 0.55 ? 'gem' : 'shard',
+        sprite: sp,
         img: this.gemImgs[i % this.gemImgs.length],
-        x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 200, g: 900,
-        rot: rnd(0, 6), vr: rnd(-9, 9), s: rnd(14, 34), life: rnd(1.6, 2.6), age: 0,
+        x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 180, g: 860,
+        rot: rnd(0, 6), vr: rnd(-7, 7), s: rnd(16, 32), life: rnd(1.3, 2.1), age: 0,
         hue: [190, 280, 45, 320][i % 4],
       });
     }
@@ -265,9 +280,9 @@ export class BurstFX {
   }
 
   /** Sürekli elmas yağmuru (DIAMOND WIN süresince). */
-  rain(seconds = 3, rate = 30) {
+  rain(seconds = 3, rate = 18) {
     this.rainUntil = performance.now() + seconds * 1000;
-    this.rainRate = rate;
+    this.rainRate = Math.min(22, rate);
     this._run();
   }
 
@@ -289,34 +304,36 @@ export class BurstFX {
     const { ctx, w, h } = this;
     ctx.clearRect(0, 0, w, h);
 
-    if (this.rainUntil && now < this.rainUntil) {
-      const k = Math.random() < this.rainRate * dt ? 1 : 0;
-      for (let i = 0; i < k + (Math.random() < this.rainRate * dt ? 1 : 0); i++) {
-        this.items.push({ kind: 'gem', img: this.gemImgs[Math.floor(rnd(0, 5))], x: rnd(0, w), y: -30, vx: rnd(-30, 30), vy: rnd(160, 320), g: 260, rot: rnd(0, 6), vr: rnd(-4, 4), s: rnd(16, 34), life: 3.2, age: 0 });
+    if (this.rainUntil && now < this.rainUntil && this.items.length < this.maxItems) {
+      if (Math.random() < this.rainRate * dt) {
+        const idx = Math.floor(rnd(0, 5));
+        this.items.push({
+          kind: 'gem',
+          sprite: this.gemSprites[idx],
+          img: this.gemImgs[idx],
+          x: rnd(0, w), y: -28, vx: rnd(-24, 24), vy: rnd(160, 300), g: 240,
+          rot: rnd(0, 6), vr: rnd(-3.5, 3.5), s: rnd(18, 32), life: 2.6, age: 0,
+        });
       }
     }
 
     if (this.flash > 0) {
-      ctx.fillStyle = `rgba(200,120,255,${this.flash * 0.45})`;
+      ctx.fillStyle = `rgba(200,120,255,${this.flash * 0.36})`;
       ctx.fillRect(0, 0, w, h);
-      this.flash = Math.max(0, this.flash - dt * 2.4);
+      this.flash = Math.max(0, this.flash - dt * 2.8);
     }
 
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
     this.rings = this.rings.filter((r) => {
       r.age += dt;
       if (r.age < 0) return true;
       const u = r.age / r.life;
       if (u >= 1) return false;
       const rad = r.r + r.v * (1 - Math.pow(1 - u, 2.2));
-      ctx.strokeStyle = `rgba(${r.color},${(1 - u) * 0.85})`;
+      ctx.strokeStyle = `rgba(${r.color},${(1 - u) * 0.78})`;
       ctx.lineWidth = r.width * (1 - u) + 1;
       ctx.beginPath();
       ctx.arc(r.x, r.y, rad, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.lineWidth = (r.width * (1 - u) + 1) * 3;
-      ctx.strokeStyle = `rgba(${r.color},${(1 - u) * 0.18})`;
       ctx.stroke();
       return true;
     });
@@ -324,16 +341,14 @@ export class BurstFX {
 
     this.items = this.items.filter((p) => {
       p.age += dt;
-      if (p.age >= p.life) return false;
+      if (p.age >= p.life || p.y > h + 40) return false;
       const fade = 1 - Math.max(0, (p.age - p.life * 0.6) / (p.life * 0.4));
       p.vy += (p.g ?? 300) * dt;
       p.vx *= 1 - dt * 0.6;
       p.x += p.vx * dt; p.y += p.vy * dt;
       if (p.kind === 'spark') {
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = `hsla(${p.hue},100%,70%,${fade})`;
+        ctx.fillStyle = `hsla(${p.hue},100%,72%,${fade})`;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
-        ctx.globalCompositeOperation = 'source-over';
         return true;
       }
       p.rot += p.vr * dt;
@@ -341,13 +356,12 @@ export class BurstFX {
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rot);
       ctx.globalAlpha = fade;
-      if (p.kind === 'gem' && p.img.complete) {
-        // dönen elmas: yatay ölçek ile 3B dönüş hissi
-        ctx.scale(Math.cos(p.age * 6 + p.rot), 1);
-        ctx.drawImage(p.img, -p.s / 2, -p.s / 2, p.s, p.s);
+      const bitmap = p.sprite?.ready ? p.sprite.cv : (p.img?.complete ? p.img : null);
+      if (p.kind === 'gem' && bitmap) {
+        ctx.scale(Math.cos(p.age * 5.2 + p.rot), 1);
+        ctx.drawImage(bitmap, -p.s / 2, -p.s / 2, p.s, p.s);
       } else {
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = `hsla(${p.hue},100%,72%,0.95)`;
+        ctx.fillStyle = `hsla(${p.hue ?? 45},100%,74%,0.92)`;
         ctx.beginPath();
         ctx.moveTo(0, -p.s * 0.5); ctx.lineTo(p.s * 0.22, 0); ctx.lineTo(0, p.s * 0.5); ctx.lineTo(-p.s * 0.22, 0);
         ctx.closePath(); ctx.fill();
